@@ -252,7 +252,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
 
                 /*
-                    THE IMPORTANT LINE 🔥
+                    THE IMPORTANT LINE
 
 
                     We save the authenticated user.

@@ -161,7 +161,7 @@ public class SecurityConfig {
                     Because:
 
                     User cannot login
-                    if login requires login first 😂
+                    if login requires login first
 
                 */
                 .authorizeHttpRequests(auth -> auth
