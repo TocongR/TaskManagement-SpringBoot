@@ -1,11 +1,6 @@
 package com.prac.taskmanagement.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
+import jakarta.persistence.*;
 
 @Entity
 public class Task {
@@ -20,14 +15,19 @@ public class Task {
 
     private boolean completed;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
     public Task(){
     }
 
-    public Task(Long id, String title, String description, boolean completed) {
+    public Task(Long id, String title, String description, boolean completed, User user) {
         this.id = id;
         this.title = title;
         this.description = description;
         this.completed = completed;
+        this.user = user;
     }
 
     public void setId(Long id) {
@@ -60,6 +60,14 @@ public class Task {
 
     public boolean getCompleted() {
         return completed;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public User getUser() {
+        return user;
     }
 
 }

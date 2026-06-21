@@ -3,10 +3,14 @@ package com.prac.taskmanagement.service;
 import com.prac.taskmanagement.dto.TaskRequest;
 import com.prac.taskmanagement.dto.TaskResponse;
 import com.prac.taskmanagement.exception.ResourceNotFoundException;
+import com.prac.taskmanagement.model.User;
 import com.prac.taskmanagement.repository.TaskRepository;
+import com.prac.taskmanagement.repository.UserRepository;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 import com.prac.taskmanagement.model.Task;
 
@@ -14,9 +18,11 @@ import com.prac.taskmanagement.model.Task;
 public class TaskService {
 
    private final TaskRepository taskRepository;
+   private final UserRepository userRepository;
 
-    public TaskService(TaskRepository taskRepository) {
+    public TaskService(TaskRepository taskRepository, UserRepository userRepository) {
         this.taskRepository = taskRepository;
+        this.userRepository = userRepository;
     }
 
     private TaskResponse mapToTaskResponse(Task task) {
@@ -29,14 +35,14 @@ public class TaskService {
     }
 
     public List<TaskResponse> getAllTasks() {
-        return taskRepository.findAll().stream()
+        User currentUser = getCurrentUser();
+
+        return taskRepository.findByUserId(currentUser.getId()).stream()
                 .map(this::mapToTaskResponse).toList();
     }
 
     public TaskResponse getTaskById(Long id) {
-        return taskRepository.findById(id)
-                .map(this::mapToTaskResponse)
-                .orElseThrow(() -> new ResourceNotFoundException("Task not found with id: " + id));
+        return mapToTaskResponse(getOwnedTaskOrThrow(id));
     }
 
     public TaskResponse createTask(TaskRequest request) {
@@ -44,6 +50,7 @@ public class TaskService {
         task.setTitle(request.getTitle());
         task.setDescription(request.getDescription());
         task.setCompleted(request.getCompleted());
+        task.setUser(getCurrentUser());
 
         Task taskSaved = taskRepository.save(task);
 
@@ -51,8 +58,7 @@ public class TaskService {
     }
 
     public TaskResponse updateTask(Long id, TaskRequest taskRequest) {
-        Task existingTask = taskRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Task not found with id: " + id));
+        Task existingTask = getOwnedTaskOrThrow(id);
 
         existingTask.setTitle(taskRequest.getTitle());
         existingTask.setDescription(taskRequest.getDescription());
@@ -64,11 +70,27 @@ public class TaskService {
     }
 
     public void deleteTask(Long id) {
-        if(!taskRepository.existsById(id)) {
+        Task task = getOwnedTaskOrThrow(id);
+        taskRepository.deleteById(task.getId());
+    }
+
+    private User getCurrentUser() {
+        String username= SecurityContextHolder.getContext().getAuthentication().getName();
+
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("Authenticated user not found: " + username));
+    }
+
+    private Task getOwnedTaskOrThrow(Long id) {
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found with id: " + id));
+        User currentUser = getCurrentUser();
+
+        if(!task.getUser().getId().equals(currentUser.getId())) {
             throw new ResourceNotFoundException("Task not found with id: " + id);
         }
 
-        taskRepository.deleteById(id);
+        return task;
     }
 
 }
