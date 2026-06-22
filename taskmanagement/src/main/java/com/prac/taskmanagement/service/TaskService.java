@@ -53,6 +53,22 @@ public class TaskService {
         );
     }
 
+    public PagedResponse<TaskResponse> getAllTasksAdmin(Pageable pageable) {
+        Page<Task> page = taskRepository.findAll(pageable);
+
+        List<TaskResponse> content = page.getContent().stream()
+                .map(this::mapToTaskResponse).toList();
+
+        return new PagedResponse<>(
+                content,
+                page.getNumber(),
+                page.getSize(),
+                page.getTotalElements(),
+                page.getTotalPages(),
+                page.isLast()
+        );
+    }
+
     public TaskResponse getTaskById(Long id) {
         return mapToTaskResponse(getOwnedTaskOrThrow(id));
     }
