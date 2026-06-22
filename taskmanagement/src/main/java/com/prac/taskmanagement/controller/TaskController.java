@@ -1,15 +1,17 @@
 package com.prac.taskmanagement.controller;
 
+import com.prac.taskmanagement.dto.PagedResponse;
 import com.prac.taskmanagement.dto.TaskRequest;
 import com.prac.taskmanagement.dto.TaskResponse;
 
 import com.prac.taskmanagement.service.TaskService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/tasks")
@@ -27,8 +29,10 @@ public class TaskController {
     }
 
     @GetMapping
-    public List<TaskResponse> getTasks() {
-        return taskService.getAllTasks();
+    public ResponseEntity<PagedResponse<TaskResponse>> getTasks(
+            @PageableDefault(size = 10, sort = "id") Pageable pageable) {
+
+        return ResponseEntity.ok(taskService.getAllTasks(pageable));
     }
 
     @GetMapping("/{id}")

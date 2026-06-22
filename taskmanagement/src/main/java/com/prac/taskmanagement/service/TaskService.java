@@ -1,16 +1,18 @@
 package com.prac.taskmanagement.service;
 
+import com.prac.taskmanagement.dto.PagedResponse;
 import com.prac.taskmanagement.dto.TaskRequest;
 import com.prac.taskmanagement.dto.TaskResponse;
 import com.prac.taskmanagement.exception.ResourceNotFoundException;
 import com.prac.taskmanagement.model.User;
 import com.prac.taskmanagement.repository.TaskRepository;
 import com.prac.taskmanagement.repository.UserRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 import com.prac.taskmanagement.model.Task;
 
@@ -34,11 +36,21 @@ public class TaskService {
         );
     }
 
-    public List<TaskResponse> getAllTasks() {
+    public PagedResponse<TaskResponse> getAllTasks(Pageable pageable) {
         User currentUser = getCurrentUser();
+        Page<Task> page = taskRepository.findByUserId(currentUser.getId(), pageable);
 
-        return taskRepository.findByUserId(currentUser.getId()).stream()
+        List<TaskResponse> content = page.getContent().stream()
                 .map(this::mapToTaskResponse).toList();
+
+        return new PagedResponse<>(
+                content,
+                page.getNumber(),
+                page.getSize(),
+                page.getTotalElements(),
+                page.getTotalPages(),
+                page.isLast()
+        );
     }
 
     public TaskResponse getTaskById(Long id) {
